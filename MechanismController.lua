@@ -1,4 +1,4 @@
--- V 0.6
+-- V 0.7
 salidaIzquierda = "left"
 salidaIzquierdaValue = 0
 
@@ -176,13 +176,16 @@ function trustedInput()
   -- Revisa que el pullEvent detectado no sea por outputs
   local izquierdo = rs.getBundledOutput(salidaIzquierda)
   local derecho = rs.getBundledOutput(salidaDerecha)
-  return izquierdo == salidaIzquierdaValue and derecho == salidaDerechaValue
+  local izquierdoAntiguo = salidaIzquierdaValue
+  local derechoAntiguo = salidaDerechaValue
+  salidaIzquierdaValue = izquierdo
+  salidaDerechaValue = derecho
+  return izquierdo == izquierdoAntiguo and derecho == derechoAntiguo
 end
 
 while true do
   -- Check de estados iniciales
   os.pullEvent("redstone") -- Espera a algun cambio en la entrada
-
   if trustedInput() then
     KineticMechanism:checkStartup()
   end
