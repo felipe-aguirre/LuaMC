@@ -5,7 +5,7 @@ iluminacion = "bottom"
 
 
 -- Limpia las salidas de redstone a valor 0
-function cleanInput()
+function cleanOutputs()
   rs.setBundledOutput(salidas,0)
   rs.setBundledOutput(iluminacion,0)
 end
