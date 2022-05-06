@@ -1,3 +1,4 @@
+-- V 0.1
 salidaIzquierda = "left"
 salidaDerecha = "right"
 entrada = "front"
