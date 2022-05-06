@@ -1,4 +1,7 @@
--- V 0.7
+-- V 1.4
+term.clear()
+print("Bienvenido a Create Mechanism Controller")
+
 salidaIzquierda = "left"
 salidaIzquierdaValue = 0
 
@@ -39,17 +42,15 @@ function cleanOutputs()
 end
 
 
+-- SIN USO AUN
 function redstoneDetector()
   while true do
     os.pullEvent(redstone)
   end
 end
 
-function Output(cable, color)
-  cablesUsados = rs.getBundledOutput(cable)
-  print(cablesUsados)
-end
 
+-- SIN USO AUN; PARA TODO INTERMITENTE
 function intermitente()
   while true do
     enable(salida, yellow)
@@ -59,6 +60,17 @@ function intermitente()
     sleep(0.5)
     disable(salida,magenta)
   end
+end
+
+function trustedInput()
+  -- Revisa que el pullEvent detectado no sea por outputs
+  local izquierdo = rs.getBundledOutput(salidaIzquierda)
+  local derecho = rs.getBundledOutput(salidaDerecha)
+  local izquierdoAntiguo = salidaIzquierdaValue
+  local derechoAntiguo = salidaDerechaValue
+  salidaIzquierdaValue = izquierdo
+  salidaDerechaValue = derecho
+  return izquierdo == izquierdoAntiguo and derecho == derechoAntiguo
 end
 
 -- Funciones para activar y desactivar salidas de canales de Redstone
@@ -75,119 +87,157 @@ function check(cable, color)
   return colors.test(rs.getBundledInput(cable), color)
 end
 
-Mechanism = {}
-function Mechanism:new (o, name, cableBoton, colorBoton, cableEntrada, colorEntrada, cableSalida, colorSalida, cableMaquina, colorMaquina, cableLuzRoja, colorLuzRoja, cableLuzVerde, colorLuzVerde)
-  o = o or {}
-  setmetatable(o, self)
-  self.__index = self
-
-  self.statusEnabled = false
-  self.statusOverflow = false
-  self.statusLackMaterial = false
-
-  self.name = name or ""
-  self.cableBoton = cableBoton or 0
-  self.colorBoton = colorBoton or 0
-
-  self.cableEntrada = cableEntrada or 0
-  self.colorEntrada = colorEntrada or 0
-
-  self.cableSalida = cableSalida or 0
-  self.colorSalida = colorSalida or 0
-
-  self.cableMaquina = cableMaquina or 0
-  self.colorMaquina = colorMaquina or 0
-
-  self.cableLuzRoja = cableLuzRoja or 0
-  self.colorLuzRoja = colorLuzRoja or 0
-
-  self.cableLuzVerde = cableLuzVerde or 0
-  self.colorLuzVerde = colorLuzVerde or 0
-  return o
-end
 -- Nota: La maquina se apaga al enviar un ON al redstone de maquina
 -- (Va invertido enable = redstoneOFF, disable = redstoneON)
-function Mechanism:enable()
-  print("Prendiendo maquina - "..self.name)
-  self.statusEnabled = true
-  disable(self.cableMaquina, self.colorMaquina)
-  enable(self.cableLuzVerde, self.colorLuzVerde)
+function enableMachine(M)
+  print(M.name.." - Encendido")
+  M.statusEnabled = true
+  disable(M.cableMaquina, M.colorMaquina)
+  enable(M.cableLuzVerde, M.colorLuzVerde)
 end
 
-function Mechanism:disable()
-  self.statusEnabled = false
-  print("Apagando maquina - "..self.name)
-  enable(self.cableMaquina, self.colorMaquina)
-  disable(self.cableLuzVerde, self.colorLuzVerde)
+function disableMachine(M)
+  M.statusEnabled = false
+  print(M.name.." - Apagado")
+  enable(M.cableMaquina, M.colorMaquina)
+  disable(M.cableLuzVerde, M.colorLuzVerde)
 end
 
-function Mechanism:checkStartup()
-  local enabled = check(self.cableBoton, self.colorBoton)
-  if enabled then
-    Mechanism:enable()
-  else
-    Mechanism:disable()
+function alertON(M)
+  -- TODO: Hacer que parpadee sin apagar el programa
+  enable(M.cableLuzRoja, M.colorLuzRoja)
+end
+
+function alertOFF(M)
+  disable(M.cableLuzRoja, M.colorLuzRoja)
+end
+
+function checkStartup(M)
+  local enabled = check(M.cableBoton, M.colorBoton)
+  if enabled and M.statusEnabled == false and M.statusLackMaterial == false and M.statusOverflow == false then
+    enableMachine(M)
+    return
+  end
+  if enabled and M.statusEnabled == true then
+    disableMachine(M)
+    return
   end
 end
 
-function Mechanism:checkOverflow()
-
+function checkOverflow(M)
+  local enabled = check(M.cableSalida, M.colorSalida)
+  if enabled and M.statusOverflow == false then
+    -- Hay falla de falta de material de salida
+    -- Apaga maquina
+    print(M.name.." - Falla en salida")
+    disableMachine(M)
+    -- Alerta
+    alertON(M)
+    M.statusLackMaterial = true
+    return
+  end
+  if (not enabled) and M.statusOverflow == true and M.statusLackMaterial == false then
+    -- Se recuperó de una falla
+    -- Prende maquina
+    print(M.name.." - Recuperación de falla Salida")
+    enableMachine(M)
+    -- Apaga alerta
+    alertOFF(M)
+    M.statusLackMaterial = false
+  end
 end
 
-function checkLackMaterial()
-
+function checkLackMaterial(M)
+  local enabled = check(M.cableEntrada, M.colorEntrada)
+  if enabled and M.statusLackMaterial == false then
+    -- Hay falla de falta de material de entrada
+    -- Apaga maquina
+    print(M.name.." - Falla en entrada")
+    disableMachine(M)
+    -- Alerta
+    alertON(M)
+    M.statusLackMaterial = true
+    return
+  end
+  if (not enabled) and M.statusLackMaterial == true and M.statusOverflow == false then
+    -- Se recuperó de una falla
+    -- Prende maquina
+    print(M.name.." - Recuperación de falla Entrada")
+    enableMachine(M)
+    -- Apaga alerta
+    alertOFF(M)
+    M.statusLackMaterial = false
+  end
 end
 
 cleanOutputs()
   -- KM = KineticMechanism
-  KMcableBoton = entrada
-  KMcolorBoton = yellow
+local KM = {
+  name = "Kinetic Mechanism",
+  statusEnabled = false,
+  statusOverflow = false,
+  statusLackMaterial = false,
+  cableBoton = entrada,
+  colorBoton = yellow,
+  cableEntrada = entrada,
+  colorEntrada = lightGray,
+  cableSalida = entrada,
+  colorSalida = magenta,
+  cableMaquina = salidaIzquierda,
+  colorMaquina = yellow,
+  cableLuzRoja = iluminacion,
+  colorLuzRoja = yellow,
+  cableLuzVerde = iluminacion,
+  colorLuzVerde = lightGray
+}
 
-  -- En Create - Andesite Funnel representa la entraada
-  KMcableEntrada = entrada
-  KMcolorEntrada = lightGray
+local PM = {
+  name =  "Precision Mechanism",
+  statusEnabled = false,
+  statusOverflow = false,
+  statusLackMaterial = false,
+  cableBoton = entrada,
+  colorBoton = orange,
+  cableEntrada = entrada,
+  colorEntrada = black,
+  cableSalida = entrada,
+  colorSalida = lime,
+  cableMaquina = salidaIzquierda,
+  colorMaquina = orange,
+  cableLuzRoja = iluminacion,
+  colorLuzRoja = lime,
+  cableLuzVerde = iluminacion,
+  colorLuzVerde = black
 
-  -- En Create - Smart Chute representa la salida
-  KMcableSalida = entrada
-  KMcolorSalida = magenta
+}
 
-  -- En Create - Small Cogwheel representa la maquina
-  KMcableMaquina = salidaIzquierda
-  KMcolorMaquina = yellow
 
-  KMcableLuzRoja = iluminacion
-  KMcolorLuzRoja = yellow
-  
-  KMcableLuzVerde = iluminacion
-  KMColorLuzVerde = lightGray
 
-  KineticMechanism = Mechanism:new(
-    nil,
-    "Kinetic Mechanism",
-    KMcableBoton, KMcolorBoton,
-    KMcableEntrada, KMcolorEntrada,
-    KMcableSalida, KMcolorSalida, 
-    KMcableMaquina, KMcolorMaquina,
-    KMcableLuzRoja, KMcolorLuzRoja,
-    KMcableLuzVerde, KMColorLuzVerde
-  )
 
-function trustedInput()
-  -- Revisa que el pullEvent detectado no sea por outputs
-  local izquierdo = rs.getBundledOutput(salidaIzquierda)
-  local derecho = rs.getBundledOutput(salidaDerecha)
-  local izquierdoAntiguo = salidaIzquierdaValue
-  local derechoAntiguo = salidaDerechaValue
-  salidaIzquierdaValue = izquierdo
-  salidaDerechaValue = derecho
-  return izquierdo == izquierdoAntiguo and derecho == derechoAntiguo
+
+
+
+function Kinetics()
+  KineticMechanism:checkLackMaterial()
+  KineticMechanism:checkOverflow()
+  KineticMechanism:checkStartup()
+  return
 end
+ 
+
 
 while true do
   -- Check de estados iniciales
   os.pullEvent("redstone") -- Espera a algun cambio en la entrada
+
   if trustedInput() then
-    KineticMechanism:checkStartup()
+    checkLackMaterial(KM)
+    checkOverflow(KM)
+    checkStartup(KM)
+
+    checkLackMaterial(PM)
+    checkOverflow(PM)
+    checkStartup(PM)
   end
 --parallel.waitForAny(tick, wait_for_q)
 end
