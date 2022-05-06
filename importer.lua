@@ -1,11 +1,11 @@
 if not http then
-  print("ERROR: Requeire la API HTTP habilitada")
+  print("ERROR: Requiere la API HTTP habilitada")
   return
 end
  
 local tArgs = {...}
 if #tArgs < 1 or #tArgs > 1 then
-  print("Importa archivos de Github")
+  print("Importa archivos de mi Github LuaMC")
   print("Uso: github <file name>")
   return
 end
