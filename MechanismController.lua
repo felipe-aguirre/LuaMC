@@ -1,7 +1,25 @@
-entradaIzquierda = "left"
-entradaDerecha = "right"
-salida = "front"
+salidaIzquierda = "left"
+salidaDerecha = "right"
+entrada = "front"
 iluminacion = "bottom"
+
+-- Colores
+white   = colors.white
+orange  = colors.orange
+magenta = colors.magenta
+lightBlue = colors.lightBlue
+yellow  = colors.yellow
+lime    = colors.lime
+pink    = colors.pink
+gray    = colors.gray	
+lightGray = colors.lightGray
+cyan    = colors.cyan
+purple  = colors.purple
+blue    = colors.blue
+brown   = colors.brown
+green   = colors.green
+red     = colors.red
+black   = colors.black
 
 
 -- Limpia las salidas de redstone a valor 0
@@ -15,6 +33,7 @@ function redstoneDetector()
   while true do
     os.pullEvent(redstone)
   end
+end
 
 function Output(cable, color)
   cablesUsados = rs.getBundledOutput(cable)
@@ -23,24 +42,130 @@ end
 
 function intermitente()
   while true do
-    rs.setBundledOutput(salida, colors.yellow)
+    enable(salida, yellow)
     sleep(0.5)
-    rs.setBundledOutput(salida,colors.magenta)
+    disable(salida, yellow)
+    enable(salida,magenta)
     sleep(0.5)
+    disable(salida,magenta)
   end
 end
 
+-- Funciones para activar y desactivar salidas de canales de Redstone
+function enable(cable, color)
+  rs.setBundledOutput(cable, colors.combine(redstone.getBundledOutput(cable), color)) 
+end
+
+function disable(cable, color)
+  rs.setBundledOutput(cable,colors.subtract(redstone.getBundledOutput(cable),color)) 
+end
+
+-- Funcion para revisar si la entrada color esta ON
+function check(cable, color)
+  return colors.test(rs.getBundledInput(cable), color)
+end
+
+
+function Mechanism:new (o, name, cableBoton, colorBoton, cableEntrada, colorEntrada, cableSalida, colorSalida, cableMaquina, colorMaquina, cableLuzRoja, colorLuzRoja, cableLuzVerde, colorLuzVerde)
+  o = o or {}
+  setmetatable(o, self)
+  self.__index = self
+
+  self.statusEnabled = false
+  self.statusOverflow = false
+  self.statusLackMaterial = false
+
+  self.name = name or ""
+  self.cableBoton = cableBoton or 0
+  self.colorBoton = colorBoton or 0
+
+  self.cableEntrada = cableEntrada or 0
+  self.colorEntrada = colorEntrada or 0
+
+  self.cableSalida = cableSalida or 0
+  self.colorSalida = colorSalida or 0
+
+  self.cableMaquina = cableMaquina or 0
+  self.colorMaquina = colorMaquina or 0
+
+  self.cableLuzRoja = cableLuzRoja or 0
+  self.colorLuzRoja = colorLuzRoja or 0
+
+  self.cableLuzVerde = cableLuzVerde or 0
+  self.colorLuzVerde = colorLuzVerde or 0
+  return o
+end
+-- Nota: La maquina se apaga al enviar un ON al redstone de maquina
+-- (Va invertido enable = redstoneOFF, disable = redstoneON)
+function Mechanism:enable()
+  print("Prendiendo maquina - "..self.name)
+  self.statusEnabled = true
+  disable(cableMaquina, colorMaquina)
+  enable(cableLuzVerde, colorLuzVerde)
+end
+
+function Mechanism:disable()
+  self.statusEnabled = false
+  print("Apagando maquina - "..self.name)
+  enable(cableMaquina, colorMaquina)
+  disable(cableLuzVerde, colorLuzVerde)
+end
+
+function Mechanism:checkStartup()
+  local enabled = check(cableEntrada, colorEntrada)
+  if enabled then
+    Mechanism:enable()
+  else
+    Mechanism:disable()
+  end
+end
+
+function Mechanism:checkOverflow()
+
+end
+
+function checkLackMaterial()
+
+end
 
 cleanOutputs()
-
 while true do
   -- KM = KineticMechanism
-  KMBoton = rs.getBundledInput(entradaIzquierda, colors.yellow)
-  Output(salida, colors.magenta)
-  rs.setBundledOutput(salida, colors.magenta)
-  Output(salida, colors.magenta)
-  os.pullEvent("redstone")
-  -- PM = Precision Mechanism
+  KMcableBoton = entrada
+  KMcolorBoton = yellow
+
+  -- En Create - Andesite Funnel representa la entraada
+  KMcableEntrada = entrada
+  KMcolorEntrada = lightGray
+
+  -- En Create - Smart Chute representa la salida
+  KMcableSalida = entrada
+  KMcolorSalida = magenta
+
+  -- En Create - Small Cogwheel representa la maquina
+  KMcableMaquina = salidaIzquierda
+  KMcolorMaquina = yellow
+
+  KMcableLuzRoja = iluminacion
+  KMcolorLuzRoja = yellow
+  
+  KMcableLuzVerde = iluminacion
+  KMColorLuzVerde = lightGray
+
+  KineticMechanism = Mechanism:new(
+    nil,
+    "Kinetic Mechanism"
+    KMcableBoton, KMcolorBoton,
+    KMcableEntrada, KMcolorEntrada,
+    KMcableSalida, KMcolorSalida, 
+    KMcableMaquina, KMcolorMaquina,
+    KMcableLuzRoja, KMcolorLuzRoja,
+    KMcableLuzVerde, KMColorLuzVerde
+  )
+
+
+  os.pullEvent("redstone") -- Espera a algun cambio en la entrada
+  
 
 --parallel.waitForAny(tick, wait_for_q)
 end
