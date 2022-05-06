@@ -1,4 +1,4 @@
--- V 0.3
+-- V 0.4
 salidaIzquierda = "left"
 salidaDerecha = "right"
 entrada = "front"
@@ -27,6 +27,7 @@ black   = colors.black
 function cleanOutputs()
   rs.setBundledOutput(salidaIzquierda,0)
   rs.setBundledOutput(salidaDerecha,0)
+  rs.setBundledOutput(entrada,0)
   rs.setBundledOutput(iluminacion,0)
 end
 
@@ -165,7 +166,6 @@ cleanOutputs()
   )
 
 while true do
-
   os.pullEvent("redstone") -- Espera a algun cambio en la entrada
   Mechanism:checkStartup()
 
