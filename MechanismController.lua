@@ -1,6 +1,7 @@
 while true do
   salidas = "front"
-  rs.setBundledInput(salidas, colors.yellow)
+  rs.setBundledOutput(salidas, colors.yellow)
   sleep(2)
-  rse.setBundledInput(salidas,colors.magenta)
+  rs.setBundledOutput(salidas,colors.magenta)
+  sleep(2)
 end
