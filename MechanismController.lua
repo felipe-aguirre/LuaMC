@@ -1,4 +1,4 @@
--- V 0.1
+-- V 0.3
 salidaIzquierda = "left"
 salidaDerecha = "right"
 entrada = "front"
@@ -59,7 +59,7 @@ function enable(cable, color)
 end
 
 function disable(cable, color)
-  rs.setBundledOutput(cable,colors.subtract(redstone.getBundledOutput(cable),color)) 
+  rs.setBundledOutput(cable,colors.subtract(rs.getBundledOutput(cable),color)) 
 end
 
 -- Funcion para revisar si la entrada color esta ON
@@ -102,8 +102,8 @@ end
 function Mechanism:enable()
   print("Prendiendo maquina - "..self.name)
   self.statusEnabled = true
-  disable(cableMaquina, colorMaquina)
-  enable(cableLuzVerde, colorLuzVerde)
+  disable(self.cableMaquina, self.colorMaquina)
+  enable(self.cableLuzVerde, self.colorLuzVerde)
 end
 
 function Mechanism:disable()
@@ -114,7 +114,7 @@ function Mechanism:disable()
 end
 
 function Mechanism:checkStartup()
-  local enabled = check(self.cableEntrada, self.colorEntrada)
+  local enabled = check(self.cableBoton, self.colorBoton)
   if enabled then
     Mechanism:enable()
   else
@@ -131,7 +131,6 @@ function checkLackMaterial()
 end
 
 cleanOutputs()
-while true do
   -- KM = KineticMechanism
   KMcableBoton = entrada
   KMcolorBoton = yellow
@@ -165,6 +164,7 @@ while true do
     KMcableLuzVerde, KMColorLuzVerde
   )
 
+while true do
 
   os.pullEvent("redstone") -- Espera a algun cambio en la entrada
   Mechanism:checkStartup()
