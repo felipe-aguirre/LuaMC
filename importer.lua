@@ -33,7 +33,7 @@ local getData = function()
 end
  
 if fs.exists(tArgs[1]) then
-  fs.delete(tArgas[1])
+  fs.delete(tArgs[1])
   print("ERROR: Archivo ya existe, reemplazando")
 end
  
