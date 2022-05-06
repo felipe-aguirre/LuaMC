@@ -1,4 +1,4 @@
--- V 0.5
+-- V 0.6
 salidaIzquierda = "left"
 salidaIzquierdaValue = 0
 
@@ -172,18 +172,18 @@ cleanOutputs()
     KMcableLuzVerde, KMColorLuzVerde
   )
 
-function fakeInput()
+function trustedInput()
   -- Revisa que el pullEvent detectado no sea por outputs
   local izquierdo = rs.getBundledOutput(salidaIzquierda)
   local derecho = rs.getBundledOutput(salidaDerecha)
-  return izquierdo ~= izquierdoValue or derecho ~= derechoValue
+  return izquierdo == salidaIzquierdaValue and derecho == salidaDerechaValue
 end
 
 while true do
   -- Check de estados iniciales
   os.pullEvent("redstone") -- Espera a algun cambio en la entrada
 
-  if not fakeInput() then
+  if trustedInput() then
     KineticMechanism:checkStartup()
   end
 --parallel.waitForAny(tick, wait_for_q)
