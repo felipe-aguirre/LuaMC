@@ -1,8 +1,15 @@
--- V 0.4
+-- V 0.5
 salidaIzquierda = "left"
+salidaIzquierdaValue = 0
+
 salidaDerecha = "right"
+salidaDerechaValue = 0
+
 entrada = "front"
+entradaValue = 0
+
 iluminacion = "bottom"
+iluminacionValue = 0
 
 -- Colores
 white   = colors.white
@@ -165,9 +172,19 @@ cleanOutputs()
     KMcableLuzVerde, KMColorLuzVerde
   )
 
-while true do
-  os.pullEvent("redstone") -- Espera a algun cambio en la entrada
-  Mechanism:checkStartup()
+function fakeInput()
+  -- Revisa que el pullEvent detectado no sea por outputs
+  local izquierdo = rs.getBundledOutput(salidaIzquierda)
+  local derecho = rs.getBundledOutput(salidaDerecha)
+  return izquierdo ~= izquierdoValue or derecho ~= derechoValue
+end
 
+while true do
+  -- Check de estados iniciales
+  os.pullEvent("redstone") -- Espera a algun cambio en la entrada
+
+  if not fakeInput() then
+    KineticMechanism:checkStartup()
+  end
 --parallel.waitForAny(tick, wait_for_q)
 end
