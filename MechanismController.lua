@@ -24,7 +24,8 @@ black   = colors.black
 
 -- Limpia las salidas de redstone a valor 0
 function cleanOutputs()
-  rs.setBundledOutput(salida,0)
+  rs.setBundledOutput(salidaIzquierda,0)
+  rs.setBundledOutput(salidaDerecha,0)
   rs.setBundledOutput(iluminacion,0)
 end
 
@@ -65,7 +66,7 @@ function check(cable, color)
   return colors.test(rs.getBundledInput(cable), color)
 end
 
-
+Mechanism = {}
 function Mechanism:new (o, name, cableBoton, colorBoton, cableEntrada, colorEntrada, cableSalida, colorSalida, cableMaquina, colorMaquina, cableLuzRoja, colorLuzRoja, cableLuzVerde, colorLuzVerde)
   o = o or {}
   setmetatable(o, self)
@@ -107,12 +108,12 @@ end
 function Mechanism:disable()
   self.statusEnabled = false
   print("Apagando maquina - "..self.name)
-  enable(cableMaquina, colorMaquina)
-  disable(cableLuzVerde, colorLuzVerde)
+  enable(self.cableMaquina, self.colorMaquina)
+  disable(self.cableLuzVerde, self.colorLuzVerde)
 end
 
 function Mechanism:checkStartup()
-  local enabled = check(cableEntrada, colorEntrada)
+  local enabled = check(self.cableEntrada, self.colorEntrada)
   if enabled then
     Mechanism:enable()
   else
@@ -154,7 +155,7 @@ while true do
 
   KineticMechanism = Mechanism:new(
     nil,
-    "Kinetic Mechanism"
+    "Kinetic Mechanism",
     KMcableBoton, KMcolorBoton,
     KMcableEntrada, KMcolorEntrada,
     KMcableSalida, KMcolorSalida, 
@@ -165,7 +166,7 @@ while true do
 
 
   os.pullEvent("redstone") -- Espera a algun cambio en la entrada
-  
+  Mechanism:checkStartup()
 
 --parallel.waitForAny(tick, wait_for_q)
 end
